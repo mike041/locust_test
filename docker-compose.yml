@@ -13,4 +13,4 @@ services:
     image: mylocust
     volumes:
       - ./:/home/locust_test
-    command: -f /home/locust_test/locustfile.py  --worker --master-host master
+    command: -f /home/locust_test/meeting/locustfile.py  --worker --master-host master
