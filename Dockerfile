@@ -27,7 +27,7 @@ RUN /usr/local/python3/bin/python3.8 -m pip install --upgrade pip
 #安装chrome_driver
 RUN ln -s /home/locust_test/chromedriver  /usr/bin/
 
-RUN pip3 install -r  requirements.txt
+RUN pip3 install -r  /home/locust_test/requirements.txt
 
 
 CMD ["/bin/bash"]
