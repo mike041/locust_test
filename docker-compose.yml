@@ -7,10 +7,12 @@ services:
       - "8089:8089"
     volumes:
       - ./:/home/locust_test
+    working_dir: /home/locust_test
     command: -f /home/locust_test/meeting/locustfile.py --master -H http://master:8089  --autostart --expect-workers 2
 
   worker:
     image: mylocust
     volumes:
       - ./:/home/locust_test
+    working_dir: /home/locust_test
     command: -f /home/locust_test/meeting/locustfile.py  --worker --master-host master
