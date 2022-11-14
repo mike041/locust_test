@@ -10,16 +10,22 @@ import json
 import time
 
 import requests
-from locust import task, HttpUser, User, events, constant, constant_pacing, TaskSet, LoadTestShape
+from locust import task, User, events, constant_pacing, TaskSet
 from selenium import webdriver
+from selenium.common import NoSuchElementException
 from selenium.webdriver import ActionChains
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
-from MyWebsocket import MindWebSocket
+from selenium.webdriver.support.wait import WebDriverWait
 
-from env_config import domain, group_id, group_name, receive_id, path, users
+from common.MyWebsocket import MindWebSocket
+
+from env_config import domain, group_id, group_name, path, users
 
 import queue
+
+from model import phone_number, privacy, login, i_know, popup_close, group, leave_meeting, join_meeting, meeting_tip, \
+    open_close_micro
 
 q = queue.Queue()
 
@@ -87,24 +93,21 @@ class JoinLeaveMeetingUser(User):
             driver.implicitly_wait(60 * 0.1)
             driver.get(f'https://{domain}/login')  # 注意测试环境改为http
             time.sleep(2)
-            driver.find_element(By.ID, 'source').send_keys(self.user)
-            while not driver.find_element(By.XPATH,
-                                          '//*[@id="root"]/div/div[2]/div[2]/label/span[1]/input').is_selected():
-                driver.find_element(By.XPATH, '//*[@id="root"]/div/div[2]/div[2]/label/span[1]/input').click()
-            driver.find_element(By.XPATH,
-                                '//*[@id="root"]/div/div[2]/div[2]/form/div[2]/div/div/div/button/span').click()
+            driver.find_element(*phone_number).send_keys(self.user)
+            while not driver.find_element(*privacy).is_selected():
+                driver.find_element(*privacy).click()
+            driver.find_element(*login).click()
             time.sleep(1)
             ActionChains(driver).send_keys('789456').perform()
-            driver.find_element(By.XPATH,
-                                '//*[@id="root"]/section/section/aside[1]/div/div/div[6]/div[2]/div/button/span').click()
-            driver.find_element(By.XPATH, "/html/body/div[3]/div/div/div/a").click()
-            driver.find_element(By.XPATH, f"//span[text()='{group_name}']").click()
+            driver.find_element(*i_know).click()
+            driver.find_element(*popup_close).click()
+            driver.find_element(*group).click()
             time.sleep(2)
             for i in range(10):
-                driver.find_element(By.CLASS_NAME, 'meeting_tip').click()
-                driver.find_element(By.XPATH, "//span[text()='加入会议']").click()
+                driver.find_element(*meeting_tip).click()
+                driver.find_element(*join_meeting).click()
                 time.sleep(2)
-                driver.find_element(By.XPATH, "//span[text()='退出会议']").click()
+                driver.find_element(*leave_meeting).click()
 
 
 class MicroPhoneUser(User):
@@ -124,25 +127,58 @@ class MicroPhoneUser(User):
             driver.implicitly_wait(60 * 0.1)
             driver.get(f'https://{domain}/login')  # 注意测试环境改为http
             time.sleep(2)
-            driver.find_element(By.ID, 'source').send_keys(self.user)
-            while not driver.find_element(By.XPATH,
-                                          '//*[@id="root"]/div/div[2]/div[2]/label/span[1]/input').is_selected():
-                driver.find_element(By.XPATH, '//*[@id="root"]/div/div[2]/div[2]/label/span[1]/input').click()
-            driver.find_element(By.XPATH,
-                                '//*[@id="root"]/div/div[2]/div[2]/form/div[2]/div/div/div/button/span').click()
+            driver.find_element(*phone_number).send_keys(self.user)
+            while not driver.find_element(*privacy).is_selected():
+                driver.find_element(*privacy).click()
+            driver.find_element(*login).click()
             time.sleep(1)
             ActionChains(driver).send_keys('789456').perform()
-            time.sleep(1)
-            driver.find_element(By.XPATH,
-                                '//*[@id="root"]/section/section/aside[1]/div/div/div[6]/div[2]/div/button/span').click()
-            driver.find_element(By.XPATH, "/html/body/div[3]/div/div/div/a").click()
-            driver.find_element(By.XPATH, f"//span[text()='{group_name}']").click()
-            driver.find_element(By.CLASS_NAME, 'meeting_tip').click()
+            driver.find_element(*i_know).click()
+            driver.find_element(*popup_close).click()
+            driver.find_element(*group).click()
+            driver.find_element(*meeting_tip).click()
             time.sleep(2)
-            driver.find_element(By.XPATH, "//span[text()='加入会议']").click()
+            driver.find_element(*join_meeting).click()
             for i in range(10):
-                driver.find_element(By.XPATH,
-                                    '//*[@id="root"]/section/section/div[2]/div[2]/div[2]/div[1]/span[1]').click()
+                driver.find_element(*open_close_micro).click()
                 time.sleep(2)
 
 
+class JustJoinUser(User):
+    user = q.get()
+
+    @task
+    def join_meeting(self):
+        _options = Options()
+        _options.set_capability('browserName', 'chrome')
+        _options.add_argument('--no-sandbox')
+        _options.add_argument('--disable-dev-shm-usage')
+        # _options.add_argument('--headless')
+
+        with webdriver.Chrome(options=_options) as driver:
+            print('driver.session_id=======', driver.session_id)
+            driver.maximize_window()
+            driver.implicitly_wait(60 * 0.1)
+            driver.get(f'https://{domain}/login')  # 注意测试环境改为http
+            time.sleep(2)
+            driver.find_element(*phone_number).send_keys(self.user)
+            while not driver.find_element(*privacy).is_selected():
+                driver.find_element(*privacy).click()
+            driver.find_element(*login).click()
+            time.sleep(1)
+            ActionChains(driver).send_keys('789456').perform()
+            driver.find_element(*i_know).click()
+            driver.find_element(*popup_close).click()
+            driver.find_element(*group).click()
+            driver.find_element(*meeting_tip).click()
+            time.sleep(2)
+            driver.find_element(*join_meeting).click()
+            time.sleep(2)
+            driver.find_element(*open_close_micro).click()
+            try:
+                WebDriverWait(driver, 60 * 60, 5).until_not(
+                    lambda d: d.find_element(By.CLASS_NAME, 'meeting_container'))
+            except NoSuchElementException as e:
+                print('会议已结束======================================')
+            finally:
+                driver.quit()

@@ -2,7 +2,7 @@ version: '3'
 
 services:
   master:
-    image: locustio/locust
+    image: mylocust
     ports:
       - "8089:8089"
     volumes:
@@ -10,7 +10,7 @@ services:
     command: -f /home/locust/locustfile.py --master -H http://master:8089  --autostart --expect-workers 2
 
   worker:
-    image: locustio/locust
+    image: mylocust
     volumes:
       - $PWD/locustfile.py:/home/locust/locustfile.py
     command: -f /home/locust/locustfile.py  --worker --master-host master

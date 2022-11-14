@@ -114,7 +114,7 @@ class MindWebSocket(WebSocketApp):
 
 def auto_send_meaasge(ws: MindWebSocket):
     ws.CreateTextMessage(reqFuncName='CreateTextMessage', data='发言开始')
-    for i in range(random.randint(1, 10)):
+    for i in range(random.randint(200, 300)):
         time.sleep(random.randint(1, 10))
         num = string.ascii_letters + string.digits
         rand = "".join(random.sample(num, 10))
