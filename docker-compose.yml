@@ -6,11 +6,11 @@ services:
     ports:
       - "8089:8089"
     volumes:
-      - $PWD/:/home/locust_test/
+      - ./:/home/locust_test
     command: -f /home/locust_test/meeting/locustfile.py --master -H http://master:8089  --autostart --expect-workers 2
 
   worker:
     image: mylocust
     volumes:
-      - PWD/:/home/locust_test/
+      - ./:/home/locust_test
     command: -f /home/locust_test/locustfile.py  --worker --master-host master
