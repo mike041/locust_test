@@ -28,6 +28,7 @@ RUN /usr/local/python3/bin/python3.8 -m pip install --upgrade pip
 RUN ln -s /home/locust_test/chromedriver  /usr/bin/
 
 ADD ./requirements.txt /home/locust_test/
+RUN pip3 install --upgrade setuptools
 RUN pip3 install -r  /home/locust_test/requirements.txt
 
 
