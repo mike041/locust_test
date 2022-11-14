@@ -13,7 +13,7 @@ RUN mv  ./google-chrome.repo /etc/yum.repos.d/google-chrome.repo
 RUN yum -y install google-chrome-stable --nogpgcheck
 
 #安装python3.8.8
-RUN yum install zlib-devel bzip2-devel openssl-devel ncurses-devel sqlite-devel readline-devel tk-devel gcc make -y
+RUN yum install zlib-devel bzip2-devel  openssl-devel ncurses-devel sqlite-devel readline-devel tk-devel gcc make -y
 
 
 RUN Python-3.8.8/configure prefix=/usr/local/python3 && make && make install && rm -rf ./Python-3.8.8
@@ -28,6 +28,7 @@ RUN /usr/local/python3/bin/python3.8 -m pip install --upgrade pip
 RUN ln -s /home/locust_test/chromedriver  /usr/bin/
 
 ADD ./requirements.txt /home/locust_test/
+RUN yum install libffi-devel
 RUN pip3 install --upgrade setuptools
 RUN pip3 install -r  /home/locust_test/requirements.txt
 
