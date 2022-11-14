@@ -4,3 +4,5 @@ FROM locustio/locust
 
 RUN pip install locust-plugins
 
+RUN ln -s /home/locust_test/chromedriver  /usr/bin/
+

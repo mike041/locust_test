@@ -1,1 +1,6 @@
-./venv
+venv
+.idea
+__pycache__/
+common/__pycache__/
+google_token/__pycache__/
+meeting/__pycache__/
