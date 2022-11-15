@@ -20,17 +20,10 @@ from selenium.webdriver.support.wait import WebDriverWait
 
 from common.MyWebsocket import MindWebSocket
 
-from env_config import domain, group_id, group_name, path, users
-
-import queue
+from env_config import domain, group_id, group_name,receive_id, path, q
 
 from model import phone_number, privacy, login, i_know, popup_close, group, leave_meeting, join_meeting, meeting_tip, \
     open_close_micro
-
-q = queue.Queue()
-
-for user in users:
-    q.put(user)
 
 
 @events.init_command_line_parser.add_listener
@@ -44,10 +37,12 @@ class MindUser(User):
     websocket_client = None
     user_id = None
     token = None
-    wait_time = constant_pacing(10000)
+    wait_time = constant_pacing(10)
     user = q.get()
+    print('==================第一步')
 
     def on_start(self):
+        print('==================第二步')
         self.http_client = requests.Session()
         url = f"https://{domain}/api/verifyUser/v2/login"
         payload = json.dumps({
@@ -69,9 +64,11 @@ class MindUser(User):
 
     @task
     def send_message(self):
+        print('==================第三步')
         self.websocket_client = MindWebSocket(self.user_id,
                                               url=f'{path}/ws/web?sendID={self.user_id}&token={self.token}&platformID=5',
-                                              group_id=group_id)
+                                              groupID=group_id,
+                                              recvID=receive_id)
 
         self.websocket_client.run_forever()
 
@@ -111,7 +108,6 @@ class JoinLeaveMeetingUser(User):
 
 
 class MicroPhoneUser(User):
-    user = q.get()
 
     @task
     def open_close_microphone(self):
@@ -145,7 +141,6 @@ class MicroPhoneUser(User):
 
 
 class JustJoinUser(User):
-    user = q.get()
 
     @task
     def join_meeting(self):

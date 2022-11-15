@@ -16,23 +16,16 @@ from websocket import WebSocketApp
 
 
 class MindWebSocket(WebSocketApp):
-    to_send_message_dict = {}
-
     def on_message(ws, message):
         ms = json.loads(message)
+        print('on_message------' + message)
         event = ms['event']
         errCode = ms['errCode']
-        operation_id = ms['operationID']
-        print('on_message------' + message)
         data = ms['data']
-        # 创建消息成功，去发送消息
-        if event == 'CreateTextMessage' and ws.to_send_message_dict[operation_id] and errCode == 0:
-            print('on_message------' + message)
-            ws.SendMessage(data, groupID=ws.group_id)
-            ws.to_send_message_dict.pop(operation_id)
+        if event == 'CreateTextMessage' and errCode == 0:
+            ws.SendMessage(data)
 
     def on_open(ws):
-        pass
         th = threading.Thread(name='t1', target=auto_send_meaasge, args=(ws,))
         th.start()
 
@@ -51,11 +44,13 @@ class MindWebSocket(WebSocketApp):
         print("Got a Pong:")
         print(message)
 
-    def __init__(self, user_id, url, group_id=None, on_error=on_error, on_close=on_close, on_open=on_open,
+    def __init__(self, userId, url, recvID='', groupID='', token=None, on_error=on_error, on_close=on_close,
+                 on_open=on_open,
                  on_message=on_message, on_ping=on_ping, on_pong=on_pong):
-        self.user_id = user_id
-        self.group_id = group_id
-        # self.token = token
+        self.userId = userId
+        self.token = token
+        self.recvID = recvID
+        self.groupID = groupID
         super(MindWebSocket, self).__init__(url,
                                             header=None,
                                             on_open=on_open,
@@ -71,68 +66,72 @@ class MindWebSocket(WebSocketApp):
                                             on_data=None,
                                             socket=None)
 
-    def BaseMessage(self, reqFuncName, data):  # 发送完消息后将 操作id返回
+    def new_message(self, message, recvID=None, groupID=None):
+        if recvID:
+            self.recvID = recvID
+        if groupID:
+            self.groupID = groupID
+        self.CreateTextMessage(message)
+
+    def BaseMessage(self, reqFuncName, message):
         t = int(time.time())
-        if isinstance(data, dict):
-            data = json.dumps(data)
+        if isinstance(message, dict):
+            data = json.dumps(message)
+        else:
+            data = message
         num = string.ascii_lowercase + string.digits
-        operation_id = "".join(random.sample(num, 10)) + str(t) + self.user_id
+        operation_id = "".join(random.sample(num, 10)) + str(t) + self.userId
         _message = {"reqFuncName": reqFuncName,
                     "operationID": operation_id,
-                    "userID": self.user_id,
+                    "userID": self.userId,
                     "data": str(data)}
-        return operation_id, json.dumps(_message)
+        print("BaseMessage--------" + reqFuncName + json.dumps(_message))
+        return json.dumps(_message)
 
-    def CreateTextMessage(self, reqFuncName='CreateTextMessage', data=None):
-        operation_id, message = self.BaseMessage(reqFuncName, data)
-        self.send(message)
-        # 创建文本信息并将操作id存下来
-        self.to_send_message_dict[operation_id] = operation_id
+    def CreateTextMessage(self, message):
+        _message = self.BaseMessage('CreateTextMessage', message)
+        self.send(_message)
 
-    def SendMessage(self, message, recvID='', groupID=None, ):
+    def SendMessage(self, message):
         data_json = {
-            "recvID": recvID,
-            "groupID": groupID,
+            "recvID": self.recvID,
+            "groupID": self.groupID,
             "offlinePushInfo": "{\"title\":\"你收到一条新消息\",\"desc\":\"\",\"ex\":\"\",\"iOSPushSound\":\"+1\",\"iOSBadgeCount\":true}",
             "message": message
         }
 
-        operation_id, message = self.BaseMessage('SendMessage', json.dumps(data_json))
-        self.send(message)
-        # 创建文本信息并将操作id存下来
-        self.to_send_message_dict[operation_id] = operation_id
-
-    # # 手动交互发消息
-    # def create_message(ws):
-    #     while True:
-    #         time.sleep(1)
-    #         message = ws.structure_message(reqFuncName='CreateTextMessage', userID=ws.user_id, data=input('发送的消息是：'))
-    #         ws.send(message)
-    #
-    # 自动发消息
+        _message = self.BaseMessage('SendMessage', json.dumps(data_json))
+        self.send(_message)
 
 
+# 手动交互发消息
+# def create_message(ws):
+#     while True:
+#         time.sleep(1)
+#         message = ws.CreateTextMessage(reqFuncName='CreateTextMessage', userID=ws.userId, data=input('发送的消息是：'))
+#         ws.send(message)
+
+
+# 自动发消息
 def auto_send_meaasge(ws: MindWebSocket):
-    ws.CreateTextMessage(reqFuncName='CreateTextMessage', data='发言开始')
-    for i in range(random.randint(200, 300)):
-        time.sleep(random.randint(1, 10))
-        num = string.ascii_letters + string.digits
-        rand = "".join(random.sample(num, 10))
-        ws.CreateTextMessage(reqFuncName='CreateTextMessage', data=rand)
-    ws.CreateTextMessage(reqFuncName='CreateTextMessage', data='发言结束')
-    ws.close()
+    for i in range(2):
+        print('==================第四步')
+        time.sleep(2)
+        t = int(time.time())
+        num = string.ascii_lowercase + string.digits
+        message = "".join(random.sample(num, 10)) + str(t) + ws.userId
+        ws.new_message(message=message)
+    ws.new_message(message='结束发言')
 
 
 if __name__ == '__main__':
-    domain = 'mind.im30.lan'
-    path = 'wss://' + domain
-    user = 15902379217
-    user_id = '4g839u4dff8qdpzo_f58xiaus7frnmqfz'
-    group_id = '411809625'
+    path = 'wss://premind.im30.net'
+    token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVSUQiOiI4cDV0dHdjeXUzZnN6Z2ppXzZmOHVvZ2JvaGpiZHprZjMiLCJQbGF0Zm9ybSI6IldlYiIsImV4cCI6MTk4MzQyMDcxMiwibmJmIjoxNjY4MDYwNDEyLCJpYXQiOjE2NjgwNjA3MTJ9.QJJJ2zNW1TC_DDYgItxnfki7RbRbA0eqqo9cWXscTDE'
+    userId = '8p5ttwcyu3fszgji_6f8uogbohjbdzkf3'
+    group_id = '367694aea403361e2cd42377fd2bcd29'
     receive_id = ''
-    token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVSUQiOiI0ZzgzOXU0ZGZmOHFkcHpvX2Y1OHhpYXVzN2Zybm1xZnoiLCJQbGF0Zm9ybSI6IldlYiIsImV4cCI6MTk4MjU1OTUwOCwibmJmIjoxNjY3MTk5MjA4LCJpYXQiOjE2NjcxOTk1MDh9.Ph0fu2xJ2xbpkRPXlfdhQv_3myi9YrqWvAht0Sdr7E8'
-
-    websocket_client = MindWebSocket('4g839u4dff8qdpzo_f58xiaus7frnmqfz',
-                                     url='ws://10.2.4.100:30000/?sendID=4g839u4dff8qdpzo_f58xiaus7frnmqfz&token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVSUQiOiI0ZzgzOXU0ZGZmOHFkcHpvX2Y1OHhpYXVzN2Zybm1xZnoiLCJQbGF0Zm9ybSI6IldlYiIsImV4cCI6MTk4MjU1OTUwOCwibmJmIjoxNjY3MTk5MjA4LCJpYXQiOjE2NjcxOTk1MDh9.Ph0fu2xJ2xbpkRPXlfdhQv_3myi9YrqWvAht0Sdr7E8&platformID=5',
-                                     group_id=group_id)
+    websocket_client = MindWebSocket(userId,
+                                     url='wss://premind.im30.net/ws/web?sendID=8p5ttwcyu3fszgji_6f8uogbohjbdzkf3&token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVSUQiOiI4cDV0dHdjeXUzZnN6Z2ppXzZmOHVvZ2JvaGpiZHprZjMiLCJQbGF0Zm9ybSI6IldlYiIsImV4cCI6MTk4MzQyMDcxMiwibmJmIjoxNjY4MDYwNDEyLCJpYXQiOjE2NjgwNjA3MTJ9.QJJJ2zNW1TC_DDYgItxnfki7RbRbA0eqqo9cWXscTDE&platformID=5',
+                                     groupID=group_id,
+                                     recvID=receive_id)
     websocket_client.run_forever()
