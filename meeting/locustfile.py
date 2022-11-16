@@ -11,6 +11,7 @@ import time
 
 import requests
 from locust import task, User, events, constant_pacing, TaskSet
+from locust.env import Environment
 from selenium import webdriver
 from selenium.common import NoSuchElementException
 from selenium.webdriver import ActionChains
@@ -19,8 +20,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 
 from common.MyWebsocket import MindWebSocket
+from custom_shape import load
 
-from env_config import domain, group_id, group_name,receive_id, path, q
+from env_config import domain, group_id, group_name, receive_id, path, q
 
 from model import phone_number, privacy, login, i_know, popup_close, group, leave_meeting, join_meeting, meeting_tip, \
     open_close_micro

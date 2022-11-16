@@ -30,6 +30,6 @@ RUN ln -s /home/locust_test/chromedriver  /usr/bin/
 ADD ./requirements.txt /home/locust_test/
 RUN pip3 install --upgrade setuptools
 RUN pip3 install -r  /home/locust_test/requirements.txt
-
+RUN ln -s /usr/local/python3/bin/locust /usr/bin/
 
 CMD ["/bin/bash"]
